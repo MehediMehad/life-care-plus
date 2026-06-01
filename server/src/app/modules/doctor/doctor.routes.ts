@@ -10,7 +10,7 @@ const router = express.Router();
 // AI driven doctor suggestion
 router.post('/suggestion', DoctorController.getAiSuggestion);
 router.get('/', DoctorController.getAllFromDB);
-router.get('/:id', DoctorController.getByIdFromDB);
+// router.get('/:id', DoctorController.getByIdFromDB);
 
 
 router.patch(

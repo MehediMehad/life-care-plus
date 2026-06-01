@@ -128,6 +128,9 @@ const createDoctor = async (req: Request): Promise<Doctor> => {
     return doctorWithSpecialties!;
   });
 
+  await redisHelper.deleteCacheByPattern(doctorCacheKeys.allDoctorLists());
+  await redisHelper.deleteCacheByPattern(doctorCacheKeys.details(result.id));
+
   return result;
 };
 
@@ -202,11 +205,11 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     orderBy:
       options.sortBy && options.sortOrder
         ? {
-            [options.sortBy]: options.sortOrder,
-          }
+          [options.sortBy]: options.sortOrder,
+        }
         : {
-            createdAt: 'desc',
-          },
+          createdAt: 'desc',
+        },
     select: {
       id: true,
       email: true,

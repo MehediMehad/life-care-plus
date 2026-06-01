@@ -81,8 +81,8 @@ const DoctorFormDialog = ({
     open,
   });
 
-  const getSpecialtyTitle = (id: string): string => {
-    return specialities?.find((s) => s.id === id)?.title || "Unknown";
+  const getSpecialty = (id: string): ISpecialty | undefined => {
+    return specialities?.find((s) => s.id === id);
   };
 
   useEffect(() => {
@@ -109,9 +109,11 @@ const DoctorFormDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle>{isEdit ? "Edit Doctor" : "Add New Doctor"}</DialogTitle>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-5 border-b bg-gray-50/50">
+          <DialogTitle className="text-xl font-semibold text-gray-800">
+            {isEdit ? "Edit Doctor Profile" : "Add New Doctor"}
+          </DialogTitle>
         </DialogHeader>
 
         <form
@@ -119,271 +121,301 @@ const DoctorFormDialog = ({
           action={formAction}
           className="flex flex-col flex-1 min-h-0"
         >
-          <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
-            <Field>
-              <FieldLabel htmlFor="name">Name</FieldLabel>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Dr. John Doe"
-                defaultValue={
-                  state?.formData?.name || (isEdit ? doctor?.name : "")
-                }
-              />
-              <InputFieldError state={state} field="name" />
-            </Field>
+          <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+              {/* --- Personal Information Section --- */}
+              <div className="md:col-span-2">
+                <h3 className="text-base font-semibold text-primary/90 border-b pb-2 mb-2 flex items-center gap-2">
+                  Personal Information
+                </h3>
+              </div>
 
-            <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="doctor@example.com"
-                // defaultValue={isEdit ? doctor?.email : undefined}
-                defaultValue={
-                  state?.formData?.email || (isEdit ? doctor?.email : "")
-                }
-                disabled={isEdit}
-              />
-              <InputFieldError state={state} field="email" />
-            </Field>
-
-            {!isEdit && (
-              <>
-                <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    defaultValue={state?.formData?.password || ""}
-                    placeholder="Enter password"
-                  />
-                  <InputFieldError state={state} field="password" />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="confirmPassword">
-                    Confirm Password
-                  </FieldLabel>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    defaultValue={state?.formData?.confirmPassword || ""}
-                    placeholder="Confirm password"
-                  />
-                  <InputFieldError state={state} field="confirmPassword" />
-                </Field>
-              </>
-            )}
-
-            {/* Specialty Selection */}
-            <SpecialtyMultiSelect
-              selectedSpecialtyIds={specialtySelection.selectedSpecialtyIds}
-              removedSpecialtyIds={specialtySelection.removedSpecialtyIds}
-              currentSpecialtyId={specialtySelection.currentSpecialtyId}
-              availableSpecialties={specialtySelection.getAvailableSpecialties(
-                specialities!,
-              )}
-              isEdit={isEdit}
-              onCurrentSpecialtyChange={
-                specialtySelection.setCurrentSpecialtyId
-              }
-              onAddSpecialty={specialtySelection.handleAddSpecialty}
-              onRemoveSpecialty={specialtySelection.handleRemoveSpecialty}
-              getSpecialtyTitle={getSpecialtyTitle}
-              getNewSpecialties={specialtySelection.getNewSpecialties}
-            />
-            <InputFieldError field="specialties" state={state} />
-
-            <Field>
-              <FieldLabel htmlFor="contactNumber">Contact Number</FieldLabel>
-              <Input
-                id="contactNumber"
-                name="contactNumber"
-                placeholder="+1234567890"
-                // defaultValue={doctor?.contactNumber}
-                defaultValue={
-                  state?.formData?.contactNumber ||
-                  (isEdit ? doctor?.contactNumber : "")
-                }
-              />
-              <InputFieldError state={state} field="contactNumber" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="address">Address</FieldLabel>
-              <Input
-                id="address"
-                name="address"
-                placeholder="123 Main St, City, Country"
-                // defaultValue={isEdit ? doctor?.address : undefined}
-                defaultValue={
-                  state?.formData?.address || (isEdit ? doctor?.address : "")
-                }
-              />
-              <InputFieldError state={state} field="address" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="registrationNumber">
-                Registration Number
-              </FieldLabel>
-              <Input
-                id="registrationNumber"
-                name="registrationNumber"
-                placeholder="REG123456"
-                // defaultValue={isEdit ? doctor?.registrationNumber : undefined}
-                defaultValue={
-                  state?.formData?.registrationNumber ||
-                  (isEdit ? doctor?.registrationNumber : "")
-                }
-              />
-              <InputFieldError state={state} field="registrationNumber" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="experience">
-                Experience (in years)
-              </FieldLabel>
-              <Input
-                id="experience"
-                name="experience"
-                type="number"
-                placeholder="5"
-                // defaultValue={isEdit ? doctor?.experience : undefined}
-                defaultValue={
-                  state?.formData?.experience ||
-                  (isEdit ? doctor?.experience : "")
-                }
-                min="0"
-              />
-              <InputFieldError state={state} field="experience" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="gender">Gender</FieldLabel>
-              <Input
-                id="gender"
-                name="gender"
-                placeholder="Select gender"
-                defaultValue={gender}
-                // defaultValue={
-                //   state?.formData?.gender || (isEdit ? doctor?.gender : "")
-                // }
-                type="hidden"
-              />
-              <Select
-                value={gender}
-                onValueChange={(value) => setGender(value as "MALE" | "FEMALE")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">Male</SelectItem>
-                  <SelectItem value="FEMALE">Female</SelectItem>
-                </SelectContent>
-              </Select>
-              <InputFieldError state={state} field="gender" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="appointmentFee">Appointment Fee</FieldLabel>
-              <Input
-                id="appointmentFee"
-                name="appointmentFee"
-                type="number"
-                placeholder="100"
-                defaultValue={isEdit ? doctor?.appointmentFee : undefined}
-                min="0"
-              />
-              <InputFieldError state={state} field="appointmentFee" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="qualification">Qualification</FieldLabel>
-              <Input
-                id="qualification"
-                name="qualification"
-                placeholder="MBBS, MD"
-                // defaultValue={isEdit ? doctor?.qualification : undefined}
-                defaultValue={
-                  state?.formData?.qualification ||
-                  (isEdit ? doctor?.qualification : "")
-                }
-              />
-              <InputFieldError state={state} field="qualification" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="currentWorkingPlace">
-                Current Working Place
-              </FieldLabel>
-              <Input
-                id="currentWorkingPlace"
-                name="currentWorkingPlace"
-                placeholder="City Hospital"
-                // defaultValue={isEdit ? doctor?.currentWorkingPlace : undefined}
-                defaultValue={
-                  state?.formData?.currentWorkingPlace ||
-                  (isEdit ? doctor?.currentWorkingPlace : "")
-                }
-              />
-              <InputFieldError state={state} field="currentWorkingPlace" />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="designation">Designation</FieldLabel>
-              <Input
-                id="designation"
-                name="designation"
-                placeholder="Senior Consultant"
-                // defaultValue={isEdit ? doctor?.designation : undefined}
-                defaultValue={
-                  state?.formData?.designation ||
-                  (isEdit ? doctor?.designation : "")
-                }
-              />
-              <InputFieldError state={state} field="designation" />
-            </Field>
-
-            {!isEdit && (
               <Field>
-                <FieldLabel htmlFor="file">Profile Photo</FieldLabel>
-                {selectedFile && (
-                  <Image
-                    //get from state if available
-                    src={
-                      typeof selectedFile === "string"
-                        ? selectedFile
-                        : URL.createObjectURL(selectedFile)
-                    }
-                    alt="Profile Photo Preview"
-                    width={50}
-                    height={50}
-                    className="mb-2 rounded-full"
-                  />
-                )}
+                <FieldLabel htmlFor="name">Name</FieldLabel>
                 <Input
-                  ref={fileInputRef}
-                  id="file"
-                  name="file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
+                  id="name"
+                  name="name"
+                  placeholder="Dr. John Doe"
+                  defaultValue={
+                    state?.formData?.name || (isEdit ? doctor?.name : "")
+                  }
+                  className="bg-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload a profile photo for the doctor
-                </p>
-                <InputFieldError state={state} field="profilePhoto" />
+                <InputFieldError state={state} field="name" />
               </Field>
-            )}
+
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="doctor@example.com"
+                  defaultValue={
+                    state?.formData?.email || (isEdit ? doctor?.email : "")
+                  }
+                  disabled={isEdit}
+                  className="bg-white disabled:bg-gray-50"
+                />
+                <InputFieldError state={state} field="email" />
+              </Field>
+
+              {!isEdit && (
+                <>
+                  <Field>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      defaultValue={state?.formData?.password || ""}
+                      placeholder="Enter password"
+                      className="bg-white"
+                    />
+                    <InputFieldError state={state} field="password" />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="confirmPassword">
+                      Confirm Password
+                    </FieldLabel>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      defaultValue={state?.formData?.confirmPassword || ""}
+                      placeholder="Confirm password"
+                      className="bg-white"
+                    />
+                    <InputFieldError state={state} field="confirmPassword" />
+                  </Field>
+                </>
+              )}
+
+              <Field>
+                <FieldLabel htmlFor="contactNumber">Contact Number</FieldLabel>
+                <Input
+                  id="contactNumber"
+                  name="contactNumber"
+                  placeholder="+1234567890"
+                  defaultValue={
+                    state?.formData?.contactNumber ||
+                    (isEdit ? doctor?.contactNumber : "")
+                  }
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="contactNumber" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="gender">Gender</FieldLabel>
+                <Input
+                  id="gender"
+                  name="gender"
+                  placeholder="Select gender"
+                  defaultValue={gender}
+                  type="hidden"
+                />
+                <Select
+                  value={gender}
+                  onValueChange={(value) =>
+                    setGender(value as "MALE" | "FEMALE")
+                  }
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+                <InputFieldError state={state} field="gender" />
+              </Field>
+
+              <div className="md:col-span-2">
+                <Field>
+                  <FieldLabel htmlFor="address">Address</FieldLabel>
+                  <Input
+                    id="address"
+                    name="address"
+                    placeholder="123 Main St, City, Country"
+                    defaultValue={
+                      state?.formData?.address ||
+                      (isEdit ? doctor?.address : "")
+                    }
+                    className="bg-white"
+                  />
+                  <InputFieldError state={state} field="address" />
+                </Field>
+              </div>
+
+              {/* --- Professional Information Section --- */}
+              <div className="md:col-span-2 mt-2">
+                <h3 className="text-base font-semibold text-primary/90 border-b pb-2 mb-2">
+                  Professional Information
+                </h3>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="registrationNumber">
+                  Registration Number
+                </FieldLabel>
+                <Input
+                  id="registrationNumber"
+                  name="registrationNumber"
+                  placeholder="REG123456"
+                  defaultValue={
+                    state?.formData?.registrationNumber ||
+                    (isEdit ? doctor?.registrationNumber : "")
+                  }
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="registrationNumber" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="qualification">Qualification</FieldLabel>
+                <Input
+                  id="qualification"
+                  name="qualification"
+                  placeholder="MBBS, MD"
+                  defaultValue={
+                    state?.formData?.qualification ||
+                    (isEdit ? doctor?.qualification : "")
+                  }
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="qualification" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="experience">
+                  Experience (in years)
+                </FieldLabel>
+                <Input
+                  id="experience"
+                  name="experience"
+                  type="number"
+                  placeholder="5"
+                  defaultValue={
+                    state?.formData?.experience ||
+                    (isEdit ? doctor?.experience : "")
+                  }
+                  min="0"
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="experience" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="designation">Designation</FieldLabel>
+                <Input
+                  id="designation"
+                  name="designation"
+                  placeholder="Senior Consultant"
+                  defaultValue={
+                    state?.formData?.designation ||
+                    (isEdit ? doctor?.designation : "")
+                  }
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="designation" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="currentWorkingPlace">
+                  Current Working Place
+                </FieldLabel>
+                <Input
+                  id="currentWorkingPlace"
+                  name="currentWorkingPlace"
+                  placeholder="City Hospital"
+                  defaultValue={
+                    state?.formData?.currentWorkingPlace ||
+                    (isEdit ? doctor?.currentWorkingPlace : "")
+                  }
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="currentWorkingPlace" />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="appointmentFee">
+                  Appointment Fee
+                </FieldLabel>
+                <Input
+                  id="appointmentFee"
+                  name="appointmentFee"
+                  type="number"
+                  placeholder="100"
+                  defaultValue={isEdit ? doctor?.appointmentFee : undefined}
+                  min="0"
+                  className="bg-white"
+                />
+                <InputFieldError state={state} field="appointmentFee" />
+              </Field>
+
+              {/* --- Specialties Section --- */}
+              <div className="md:col-span-2 mt-2 border-t pt-4">
+                <SpecialtyMultiSelect
+                  selectedSpecialtyIds={specialtySelection.selectedSpecialtyIds}
+                  removedSpecialtyIds={specialtySelection.removedSpecialtyIds}
+                  currentSpecialtyId={specialtySelection.currentSpecialtyId}
+                  availableSpecialties={specialtySelection.getAvailableSpecialties(
+                    specialities!,
+                  )}
+                  isEdit={isEdit}
+                  onCurrentSpecialtyChange={
+                    specialtySelection.setCurrentSpecialtyId
+                  }
+                  onAddSpecialty={specialtySelection.handleAddSpecialty}
+                  onRemoveSpecialty={specialtySelection.handleRemoveSpecialty}
+                  getSpecialty={getSpecialty}
+                  getNewSpecialties={specialtySelection.getNewSpecialties}
+                />
+                <InputFieldError field="specialties" state={state} />
+              </div>
+
+              {!isEdit && (
+                <div className="md:col-span-2 mt-2 border-t pt-4">
+                  <Field>
+                    <FieldLabel htmlFor="file">Profile Photo</FieldLabel>
+                    {selectedFile && (
+                      <div className="mb-3">
+                        <Image
+                          src={
+                            typeof selectedFile === "string"
+                              ? selectedFile
+                              : URL.createObjectURL(selectedFile)
+                          }
+                          alt="Profile Photo Preview"
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 rounded-full object-cover border-2 border-primary/20 shadow-sm"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      ref={fileInputRef}
+                      id="file"
+                      name="file"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="bg-white cursor-pointer file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    />
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Upload a profile photo for the doctor (optional, Max 5MB)
+                    </p>
+                    <InputFieldError state={state} field="profilePhoto" />
+                  </Field>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
+          <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50">
             <Button
               type="button"
               variant="outline"

@@ -13,7 +13,7 @@ interface UseSpecialtySelectionReturn {
     removedSpecialtyIds: string[];
     currentSpecialtyId: string;
     setCurrentSpecialtyId: (id: string) => void;
-    handleAddSpecialty: () => void;
+    handleAddSpecialty: (id?: string) => void;
     handleRemoveSpecialty: (id: string) => void;
     getNewSpecialties: () => string[];
     getAvailableSpecialties: (allSpecialties: ISpecialty[]) => ISpecialty[];
@@ -51,19 +51,22 @@ export const useSpecialtySelection = ({
     const [currentSpecialtyId, setCurrentSpecialtyId] = useState<string>("");
 
 
-    const handleAddSpecialty = () => {
+    const handleAddSpecialty = (idToAdd?: string) => {
+        const id = idToAdd || currentSpecialtyId;
         if (
-            currentSpecialtyId &&
-            !selectedSpecialtyIds.includes(currentSpecialtyId)
+            id &&
+            !selectedSpecialtyIds.includes(id)
         ) {
-            setSelectedSpecialtyIds([...selectedSpecialtyIds, currentSpecialtyId]);
+            setSelectedSpecialtyIds([...selectedSpecialtyIds, id]);
             // If in edit mode and we're re-adding a removed specialty
-            if (removedSpecialtyIds.includes(currentSpecialtyId)) {
+            if (removedSpecialtyIds.includes(id)) {
                 setRemovedSpecialtyIds(
-                    removedSpecialtyIds.filter((id) => id !== currentSpecialtyId)
+                    removedSpecialtyIds.filter((removedId) => removedId !== id)
                 );
             }
-            setCurrentSpecialtyId("");
+            if (!idToAdd) {
+                setCurrentSpecialtyId("");
+            }
         }
     };
 
