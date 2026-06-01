@@ -26,6 +26,9 @@ const DoctorsPage = async ({
   ]);
 
   const doctors = doctorsResponse?.data || [];
+
+  console.log("getDoctors", doctors);
+
   const specialties = specialtiesResponse?.data || [];
 
   return (

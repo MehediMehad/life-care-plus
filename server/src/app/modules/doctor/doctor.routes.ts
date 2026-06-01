@@ -9,10 +9,9 @@ const router = express.Router();
 
 // AI driven doctor suggestion
 router.post('/suggestion', DoctorController.getAiSuggestion);
-
+router.get('/', DoctorController.getAllFromDB);
 router.get('/:id', DoctorController.getByIdFromDB);
 
-router.get('/', DoctorController.getAllFromDB);
 
 router.patch(
   '/:id',
@@ -21,10 +20,8 @@ router.patch(
   DoctorController.updateIntoDB,
 );
 
-//task 5
 router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), DoctorController.deleteFromDB);
 
-// task 6
 router.delete('/soft/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), DoctorController.softDelete);
 
 export const DoctorRoutes = router;

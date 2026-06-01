@@ -112,6 +112,9 @@ const getAllFromDB = async (filters: IDoctorFilterRequest, options: IPaginationO
     DOCTOR_CACHE_TTL,
   );
 
+  console.log("result", result);
+
+
   return result;
 };
 
