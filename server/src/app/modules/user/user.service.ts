@@ -1,7 +1,6 @@
 import { Admin, Doctor, Patient, Prisma, UserRole, UserStatus } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 import { Request } from 'express';
-import config from '../../../config';
+import { passwordHelpers } from '../../../helpers/passwordHelpers';
 import { fileUploader } from '../../../helpers/fileUploader';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import prisma from '../../../shared/prisma';
@@ -21,7 +20,7 @@ const createAdmin = async (req: Request): Promise<Admin> => {
     req.body.admin.profilePhoto = uploadToCloudinary?.secure_url;
   }
 
-  const hashedPassword: string = await bcrypt.hash(req.body.password, Number(config.salt_round));
+  const hashedPassword: string = await passwordHelpers.hashPassword(req.body.password);
 
   const userData = {
     email: req.body.admin.email,
@@ -54,7 +53,7 @@ const createDoctor = async (req: Request): Promise<Doctor> => {
     req.body.doctor.profilePhoto = uploadToCloudinary?.secure_url;
   }
 
-  const hashedPassword: string = await bcrypt.hash(req.body.password, Number(config.salt_round));
+  const hashedPassword: string = await passwordHelpers.hashPassword(req.body.password);
 
   const userData = {
     email: req.body.doctor.email,
@@ -139,7 +138,7 @@ const createPatient = async (req: Request): Promise<Patient> => {
     req.body.patient.profilePhoto = uploadedProfileImage?.secure_url;
   }
 
-  const hashedPassword: string = await bcrypt.hash(req.body.password, Number(config.salt_round));
+  const hashedPassword: string = await passwordHelpers.hashPassword(req.body.password);
 
   const userData = {
     email: req.body.patient.email,

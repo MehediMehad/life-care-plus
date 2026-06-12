@@ -1,5 +1,5 @@
 import { NotificationType, UserStatus } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import { passwordHelpers } from '../../../helpers/passwordHelpers';
 import httpStatus from 'http-status';
 import { Secret } from 'jsonwebtoken';
 import config from '../../../config';
@@ -17,11 +17,12 @@ const loginUser = async (payload: { email: string; password: string }) => {
     },
   });
 
-  const isCorrectPassword: boolean = await bcrypt.compare(payload.password, userData.password);
+  const isCorrectPassword: boolean = await passwordHelpers.comparePassword(payload.password, userData.password);
 
   if (!isCorrectPassword) {
-    throw new Error('Password incorrect!');
+    throw new ApiError(httpStatus.FORBIDDEN, 'Password incorrect!');
   }
+
   const accessToken = jwtHelpers.generateToken(
     {
       email: userData.email,
@@ -48,11 +49,14 @@ const loginUser = async (payload: { email: string; password: string }) => {
 };
 
 const refreshToken = async (token: string) => {
-  let decodedData;
-  try {
-    decodedData = jwtHelpers.verifyToken(token, config.jwt.refresh_token_secret as Secret);
-  } catch (err) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'Invalid or expired reset token!');
+
+  const decodedData = jwtHelpers.verifyToken(
+    token,
+    config.jwt.refresh_token_secret as Secret,
+  )
+
+  if (!decodedData) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Invalid or expired refresh token!');
   }
 
   const userData = await prisma.user.findUniqueOrThrow({
@@ -95,13 +99,13 @@ const changePassword = async (user: any, payload: any) => {
     },
   });
 
-  const isCorrectPassword: boolean = await bcrypt.compare(payload.oldPassword, userData.password);
+  const isCorrectPassword: boolean = await passwordHelpers.comparePassword(payload.oldPassword, userData.password);
 
   if (!isCorrectPassword) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Password incorrect!');
   }
 
-  const hashedPassword: string = await bcrypt.hash(payload.newPassword, Number(config.salt_round));
+  const hashedPassword: string = await passwordHelpers.hashPassword(payload.newPassword);
 
   await prisma.user.update({
     where: {
@@ -274,7 +278,7 @@ const resetPassword = async (
   }
 
   // hash password
-  const password = await bcrypt.hash(payload.password, Number(config.salt_round));
+  const password = await passwordHelpers.hashPassword(payload.password);
 
   // update into database
   await prisma.user.update({
