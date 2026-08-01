@@ -9,11 +9,11 @@ RUN npm install
 
 COPY . .
 
-ARG DATABASE_URL="postgresql://postgres:123456@db:5432/life_care_plus"
-ENV DATABASE_URL=$DATABASE_URL
-
+# Provide a dummy URL so prisma generate succeeds during docker build.
+ARG DATABASE_URL="postgresql://fake:fake@fake_host:5432/fake_db"
 RUN npm run prisma:generate
+RUN npm run build
 
 EXPOSE 5000
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]

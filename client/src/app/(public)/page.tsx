@@ -3,10 +3,12 @@ import HeroSection from "./_components/HeroSection";
 import OurFeatures from "./_components/OurFeatures";
 import StepsSolution from "./_components/StepsSolution";
 
-// Dynamic import
-import dynamic from "next/dynamic";
+export const dynamic = 'force-dynamic';
 
-const Specialities = dynamic(
+// Dynamic import
+import nextDynamic from "next/dynamic";
+
+const Specialities = nextDynamic(
   () => import("@/app/(public)/_components/Specialties"),
   {
     loading: () => (
@@ -15,7 +17,7 @@ const Specialities = dynamic(
   },
 );
 
-const TopRatedDoctors = dynamic(
+const TopRatedDoctors = nextDynamic(
   () => import("@/app/(public)/_components/TopRatedDoctors"),
   {
     loading: () => (
@@ -24,8 +26,8 @@ const TopRatedDoctors = dynamic(
   },
 );
 
-const Steps = dynamic(() => import("@/app/(public)/_components/Steps"));
-const Testimonials = dynamic(
+const Steps = nextDynamic(() => import("@/app/(public)/_components/Steps"));
+const Testimonials = nextDynamic(
   () => import("@/app/(public)/_components/Testimonials"),
 );
 

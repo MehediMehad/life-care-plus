@@ -119,6 +119,7 @@ const MyProfile = ({ userInfo }: MyProfileProps) => {
                   type="file"
                   id="file"
                   name="file"
+                  form="profile-form"
                   accept="image/*"
                   className="hidden"
                   onChange={handleImageChange}
@@ -150,7 +151,7 @@ const MyProfile = ({ userInfo }: MyProfileProps) => {
         </Card>
 
         {/* Profile Information Card */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2">
+        <form id="profile-form" onSubmit={handleSubmit} className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>

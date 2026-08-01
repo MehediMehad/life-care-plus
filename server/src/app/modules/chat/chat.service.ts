@@ -47,10 +47,10 @@ const getMyConversations = async (userId: string) => {
         }
       }
 
-      return { 
-        ...conv, 
+      return {
+        ...conv,
         otherUser,
-        unreadCount: conv._count?.messages || 0
+        unreadCount: conv._count?.messages || 0,
       };
     }),
   );
