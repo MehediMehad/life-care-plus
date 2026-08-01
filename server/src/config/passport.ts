@@ -64,7 +64,7 @@ passport.use(
         }
 
         // সব ঠিক থাকলে ইউজার ডাটা রিটার্ন করে দিবো
-        return done(null, user);
+        return done(null, user as any);
       } catch (error) {
         return done(error as Error, false);
       }
@@ -133,7 +133,7 @@ passport.use(
           }
         }
 
-        return done(null, user);
+        return done(null, user as any);
       } catch (error) {
         return done(error as Error, false);
       }
@@ -150,7 +150,7 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id: string, done) => {
   try {
     const user = await prisma.user.findUnique({ where: { id } });
-    done(null, user);
+    done(null, user as any);
   } catch (error) {
     done(error, null);
   }

@@ -1,37 +1,44 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { toast } from "sonner"; // আপনি react-hot-toast বা toastify ব্যবহার করলে সেটার ইম্পোর্ট দিবেন
+import { toast } from "sonner";
+import { exchangeSocialCode } from "../_services/social-login.service";
 
 const SocialLoginHandler = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const isProcessed = useRef(false);
 
   useEffect(() => {
-    // URL থেকে token এবং error বের করে আনা
-    const token = searchParams.get("token");
+    const code = searchParams.get("code");
     const error = searchParams.get("error");
 
-    if (token) {
-      // ১. টোকেন সেভ করুন (আপনার প্রোজেক্টের ফাংশন অনুযায়ী)
-      // setToLocalStorage("accessToken", token);
+    if (code && !isProcessed.current) {
+      isProcessed.current = true;
+      window.history.replaceState(null, "", pathname);
 
-      // ২. সাকসেস টোস্ট দেখানো
-      toast.success("Successfully logged in!");
-
-      // ৩. URL থেকে টোকেনটা মুছে দিয়ে ফ্রেশ URL তৈরি করা
-      router.replace(pathname);
-    } else if (error) {
-      // ১. এরর টোস্ট দেখানো
+      exchangeSocialCode(code).then((result) => {
+        if (result.success && result.redirectTo) {
+          toast.success("Successfully logged in!");
+          router.replace(result.redirectTo);
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          toast.error(result.message || "Login failed. Please try again.");
+          router.replace("/login");
+        }
+      });
+    } else if (error && !isProcessed.current) {
+      isProcessed.current = true;
+      window.history.replaceState(null, "", pathname);
       toast.error("Login failed! Please try again.");
-
-      // ২. URL থেকে এরর প্যারামিটার মুছে ফ্রেশ URL তৈরি করা
       router.replace(pathname);
     }
   }, [searchParams, router, pathname]);
 
-  return null; // এটি কোনো UI দেখাবে না
+  return null;
 };
 
 export default SocialLoginHandler;

@@ -3,6 +3,9 @@
 import { UserInfo } from "@/app/(auth)/_types/user.type";
 import { LayoutDashboard, Menu } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthToken } from "@/hooks/useAuthToken";
 import UserDropdown from "@/components/layout/dashboard/UserDropdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +29,18 @@ const MobileMenu = ({
   userInfo,
   dashboardRoute,
 }: MobileMenuProps) => {
+  const router = useRouter();
+  const clientHasToken = useAuthToken();
+
+  useEffect(() => {
+    if (clientHasToken && !userInfo) {
+      router.refresh();
+    }
+  }, [clientHasToken, userInfo, router]);
+
+  const hasToken = clientHasToken || hasAccessToken;
+  const currentUserInfo = hasToken ? userInfo : null;
+
   return (
     <div className="md:hidden">
       <Sheet>
@@ -50,7 +65,9 @@ const MobileMenu = ({
               {/* <div className="flex justify-center w-full">
                 <AISearchDialog />
               </div> */}
-              {hasAccessToken && userInfo ? (
+              {hasToken && !currentUserInfo ? (
+                <div className="h-10 w-full animate-pulse rounded-md bg-muted"></div>
+              ) : hasToken && currentUserInfo ? (
                 <>
                   <Link
                     href={dashboardRoute || "/"}
@@ -62,7 +79,7 @@ const MobileMenu = ({
                     </Button>
                   </Link>
                   <div className="flex justify-center">
-                    <UserDropdown userInfo={userInfo} />
+                    <UserDropdown userInfo={currentUserInfo} />
                   </div>
                 </>
               ) : (

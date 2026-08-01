@@ -4,6 +4,8 @@ import { useAuthToken } from "@/hooks/useAuthToken";
 import { UserInfo } from "@/app/(auth)/_types/user.type";
 import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import UserDropdown from "@/components/layout/dashboard/UserDropdown";
 import { Button } from "@/components/ui/button";
 
@@ -18,13 +20,24 @@ export default function NavbarAuthButtons({
   initialUserInfo,
   initialDashboardRoute,
 }: NavbarAuthButtonsProps) {
+  const router = useRouter();
   // Detect client-side auth state changes on navigation
   const clientHasToken = useAuthToken();
+
+  useEffect(() => {
+    if (clientHasToken && !initialUserInfo) {
+      router.refresh();
+    }
+  }, [clientHasToken, initialUserInfo, router]);
 
   // Use client token state if available, otherwise fall back to server state
   const hasToken = clientHasToken || initialHasToken;
   const userInfo = hasToken ? initialUserInfo : null;
   const dashboardRoute = initialDashboardRoute;
+
+  if (hasToken && !userInfo) {
+    return <div className="h-10 w-24 animate-pulse rounded-md bg-muted"></div>;
+  }
 
   if (hasToken && userInfo) {
     return (

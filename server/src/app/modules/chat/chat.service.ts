@@ -1,5 +1,6 @@
-import prisma from '../../../shared/prisma';
+import prismaClient from '../../../shared/prisma';
 import { fileUploader } from '../../../helpers/fileUploader';
+const prisma = prismaClient as any;
 
 // ১. ইউজারের সব কনভারসেশন (চ্যাট লিস্ট) আনা
 const getMyConversations = async (userId: string) => {
@@ -23,8 +24,8 @@ const getMyConversations = async (userId: string) => {
 
   // ম্যাজিক: প্রত্যেকটা চ্যাটের সাথে ওপর পাশের মানুষের (otherUser) নাম ও ছবি জুড়ে দিচ্ছি
   const enrichedConversations = await Promise.all(
-    conversations.map(async (conv) => {
-      const otherUserId = conv.participantIds.find((id) => id !== userId);
+    conversations.map(async (conv: any) => {
+      const otherUserId = conv.participantIds.find((id: any) => id !== userId);
       let otherUser = null;
 
       if (otherUserId) {
@@ -46,10 +47,10 @@ const getMyConversations = async (userId: string) => {
         }
       }
 
-      return { 
-        ...conv, 
+      return {
+        ...conv,
         otherUser,
-        unreadCount: conv._count?.messages || 0
+        unreadCount: conv._count?.messages || 0,
       };
     }),
   );

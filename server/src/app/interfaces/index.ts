@@ -4,12 +4,11 @@ import { TJwtPayload } from './jwt.payload';
 
 declare global {
   namespace Express {
-    interface Request {
-      user: JwtPayload & TJwtPayload;
-    }
     interface User {
       email: string;
       role: import('@prisma/client').UserRole;
+      userId: string;
+      id?: string;
     }
     interface ProcessEnv {
       JWT_ACCESS_SECRET: string;

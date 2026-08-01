@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { getRedisConnection } from './connection';
-import emailSender from '../modules/auth/emailSender';
+import emailSender from '../../helpers/emailSender';
 import logger from '../../lib/logger';
 
 const EMAIL_QUEUE_NAME = 'email-dispatch-queue';

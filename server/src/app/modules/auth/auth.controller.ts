@@ -9,6 +9,7 @@ import { cookieSet } from '../../../helpers/cookieSet';
 import AppError from '../../errors/ApiError';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import { Secret } from 'jsonwebtoken';
+import crypto from 'crypto';
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const accessTokenExpiresIn = config.jwt.expires_in as string;
@@ -42,57 +43,12 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
-  /*
-  EXPIRES_IN=7d 
 
-REFRESH_TOKEN_EXPIRES_IN=1y 
-  */
   const accessTokenExpiresIn = config.jwt.expires_in as string;
   const refreshTokenExpiresIn = config.jwt.refresh_token_expires_in as string;
 
-  // convert accessTokenExpiresIn to milliseconds
-  let accessTokenMaxAge: number;
-  const accessTokenUnit = accessTokenExpiresIn.slice(-1);
-  const accessTokenValue = parseInt(accessTokenExpiresIn.slice(0, -1));
-  if (accessTokenUnit === 'y') {
-    accessTokenMaxAge = accessTokenValue * 365 * 24 * 60 * 60 * 1000;
-  } else if (accessTokenUnit === 'M') {
-    accessTokenMaxAge = accessTokenValue * 30 * 24 * 60 * 60 * 1000;
-  } else if (accessTokenUnit === 'w') {
-    accessTokenMaxAge = accessTokenValue * 7 * 24 * 60 * 60 * 1000;
-  } else if (accessTokenUnit === 'd') {
-    accessTokenMaxAge = accessTokenValue * 24 * 60 * 60 * 1000;
-  } else if (accessTokenUnit === 'h') {
-    accessTokenMaxAge = accessTokenValue * 60 * 60 * 1000;
-  } else if (accessTokenUnit === 'm') {
-    accessTokenMaxAge = accessTokenValue * 60 * 1000;
-  } else if (accessTokenUnit === 's') {
-    accessTokenMaxAge = accessTokenValue * 1000;
-  } else {
-    accessTokenMaxAge = 1000 * 60 * 60; // default 1 hour
-  }
-
-  // convert refreshTokenExpiresIn to milliseconds
-  let refreshTokenMaxAge: number;
-  const refreshTokenUnit = refreshTokenExpiresIn.slice(-1);
-  const refreshTokenValue = parseInt(refreshTokenExpiresIn.slice(0, -1));
-  if (refreshTokenUnit === 'y') {
-    refreshTokenMaxAge = refreshTokenValue * 365 * 24 * 60 * 60 * 1000;
-  } else if (refreshTokenUnit === 'M') {
-    refreshTokenMaxAge = refreshTokenValue * 30 * 24 * 60 * 60 * 1000;
-  } else if (refreshTokenUnit === 'w') {
-    refreshTokenMaxAge = refreshTokenValue * 7 * 24 * 60 * 60 * 1000;
-  } else if (refreshTokenUnit === 'd') {
-    refreshTokenMaxAge = refreshTokenValue * 24 * 60 * 60 * 1000;
-  } else if (refreshTokenUnit === 'h') {
-    refreshTokenMaxAge = refreshTokenValue * 60 * 60 * 1000;
-  } else if (refreshTokenUnit === 'm') {
-    refreshTokenMaxAge = refreshTokenValue * 60 * 1000;
-  } else if (refreshTokenUnit === 's') {
-    refreshTokenMaxAge = refreshTokenValue * 1000;
-  } else {
-    refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 30; // default 30 days
-  }
+  const accessTokenMaxAge: number = getTokenMaxAge(accessTokenExpiresIn);
+  const refreshTokenMaxAge: number = getTokenMaxAge(refreshTokenExpiresIn);
 
   const result = await AuthServices.refreshToken(refreshToken);
 
@@ -151,9 +107,9 @@ const resetPassword = catchAsync(async (req: Request & { user?: any }, res: Resp
 });
 
 const getMe = catchAsync(async (req: Request & { user?: any }, res: Response) => {
-  const user = req.cookies;
+  const accessToken = req.cookies.accessToken;
 
-  const result = await AuthServices.getMe(user);
+  const result = await AuthServices.getMe({ accessToken });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -164,17 +120,12 @@ const getMe = catchAsync(async (req: Request & { user?: any }, res: Response) =>
 });
 
 const socialLoginCallback = catchAsync(async (req: Request, res: Response) => {
-  // Passport লগিন সাকসেস হলে ইউজারের ডাটা req.user এর মধ্যে রেখে দেয়
   const user = req.user as any;
 
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // লজিক ১: টোকেন তৈরি করুন (আপনার আগের লজিক অনুযায়ী
-  console.log('auth controller theke social login user', user);
-
-  // accessToken এবং refreshToken জেনারেট করার ফাংশন কল করুন
   const accessToken = jwtHelpers.generateToken(
     {
       email: user.email,
@@ -193,26 +144,57 @@ const socialLoginCallback = catchAsync(async (req: Request, res: Response) => {
     config.jwt.refresh_token_expires_in as string,
   );
 
-  // লজিক ২: রিফ্রেশ টোকেন কুকিতে সেট করুন
-  const accessTokenExpiresIn = config.jwt.expires_in as string;
-  const refreshTokenExpiresIn = config.jwt.refresh_token_expires_in as string;
+  // Generate one-time code and store tokens in Redis
+  const oneTimeCode = crypto.randomUUID();
+  const { redis } = await import('../../../lib/redis');
+  await redis.set(
+    `social_login_code_${oneTimeCode}`,
+    JSON.stringify({ accessToken, refreshToken }),
+    'EX',
+    60,
+  );
 
-  // convert accessTokenExpiresIn to milliseconds
-  const accessTokenMaxAge: number = getTokenMaxAge(accessTokenExpiresIn);
-
-  // convert refreshTokenExpiresIn to milliseconds
-  const refreshTokenMaxAge: number = getTokenMaxAge(refreshTokenExpiresIn);
-  cookieSet(res, 'accessToken', accessToken, accessTokenMaxAge);
-  cookieSet(res, 'refreshToken', refreshToken, refreshTokenMaxAge);
-
-  // লজিক ৩: ফ্রন্ট-এন্ডে রিডাইরেক্ট করা
+  // Redirect with only the one-time code (no tokens in URL)
   let redirectTo = req.query.state ? (req.query.state as string) : '';
   if (redirectTo.startsWith('/')) {
     redirectTo = redirectTo.slice(1);
   }
+  const redirectUrl = `${config.frontendUrl}/${redirectTo}?code=${oneTimeCode}`;
 
-  // URL এর সাথে Access Token পাঠিয়ে দিতে পারেন, যাতে ফ্রন্ট-এন্ড সেটা লোকাল স্টোরেজ বা কুকিতে সেভ করতে পারে
-  res.redirect(`${config.frontendUrl}/${redirectTo}?token=${accessToken}`);
+  // Cache for Facebook double-submit prevention
+  const fbCode = req.query.code as string;
+  if (fbCode) {
+    await redis.set(`fb_code_${fbCode}`, redirectUrl, 'EX', 60);
+  }
+
+  res.redirect(redirectUrl);
+});
+
+const exchangeSocialCode = catchAsync(async (req: Request, res: Response) => {
+  const { code } = req.body;
+
+  if (!code) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Code is required');
+  }
+
+  const { redis } = await import('../../../lib/redis');
+  const storedData = await redis.get(`social_login_code_${code}`);
+
+  if (!storedData) {
+    throw new AppError(httpStatus.GONE, 'Code is invalid or expired. Please login again.');
+  }
+
+  // Delete code immediately (single-use)
+  await redis.del(`social_login_code_${code}`);
+
+  const { accessToken, refreshToken } = JSON.parse(storedData);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Social login successful!',
+    data: { accessToken, refreshToken },
+  });
 });
 
 const logout = catchAsync(async (req: Request, res: Response) => {
@@ -242,5 +224,6 @@ export const AuthController = {
   resetPassword,
   getMe,
   socialLoginCallback,
+  exchangeSocialCode,
   logout,
 };

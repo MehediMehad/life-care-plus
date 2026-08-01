@@ -31,13 +31,7 @@ const loginUser = async (
   const failedAttempts = recentAttempts.filter((a) => !a.success);
 
   if (failedAttempts.length >= MAX_FAILED_ATTEMPTS) {
-    const lockoutEndsAt = new Date(
-      failedAttempts[0].attemptAt.getTime() + LOCKOUT_DURATION_MINUTES * 60 * 1000,
-    );
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      `Too many failed attempts. Try again after ${lockoutEndsAt.toLocaleString()}`,
-    );
+    throw new ApiError(httpStatus.FORBIDDEN, 'Too many failed attempts. Please try again later.');
   }
 
   // ২. ইউজার ডাটাবেসে আছে কি না

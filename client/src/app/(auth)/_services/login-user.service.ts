@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
@@ -6,12 +7,14 @@ import {
   isValidRedirectForRole,
   UserRole,
 } from "@/lib/auth/auth-utils";
+import { getCookieOptions } from "@/lib/auth/cookie-config";
 import { serverFetch } from "@/services/http";
 import { zodValidator } from "@/lib/utils/zod-validator";
 import { loginValidationZodSchema } from "@/app/(auth)/_validations/auth.validation";
 import { parse } from "cookie";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { setCookie } from "./token-handlers.service";
 
 export const loginUser = async (
@@ -70,21 +73,28 @@ export const loginUser = async (
       throw new Error("Tokens not found in cookies");
     }
 
+    const cookieBase = getCookieOptions();
     await setCookie("accessToken", accessTokenObject.accessToken, {
-      secure: true,
-      httpOnly: true,
+      ...cookieBase,
       maxAge: parseInt(accessTokenObject["Max-Age"]) || 1000 * 60 * 60,
       path: accessTokenObject.Path || "/",
-      sameSite: accessTokenObject["SameSite"] || "none",
+      sameSite: accessTokenObject["SameSite"] || cookieBase.sameSite,
+    });
+
+    // Client-side readable cookie to detect auth state
+    await setCookie("isLoggedIn", "true", {
+      ...cookieBase,
+      httpOnly: false,
+      maxAge: parseInt(accessTokenObject["Max-Age"]) || 1000 * 60 * 60,
+      path: "/",
     });
 
     await setCookie("refreshToken", refreshTokenObject.refreshToken, {
-      secure: true,
-      httpOnly: true,
+      ...cookieBase,
       maxAge:
         parseInt(refreshTokenObject["Max-Age"]) || 1000 * 60 * 60 * 24 * 90,
       path: refreshTokenObject.Path || "/",
-      sameSite: refreshTokenObject["SameSite"] || "none",
+      sameSite: refreshTokenObject["SameSite"] || cookieBase.sameSite,
     });
     const verifiedToken: JwtPayload | string = jwt.verify(
       accessTokenObject.accessToken,
@@ -104,6 +114,9 @@ export const loginUser = async (
     if (redirectTo && result.data.needPasswordChange) {
       const requestedPath =
         redirectTo.toString() || getDefaultDashboardRoute(userRole);
+
+      revalidatePath("/", "layout");
+
       if (isValidRedirectForRole(requestedPath, userRole)) {
         redirect(`/reset-password?redirect=${requestedPath}`);
       } else {
@@ -113,8 +126,11 @@ export const loginUser = async (
     }
 
     if (result.data.needPasswordChange) {
+      revalidatePath("/", "layout");
       redirect("/reset-password");
     }
+
+    revalidatePath("/", "layout");
 
     if (redirectTo) {
       const requestedPath = redirectTo.toString();

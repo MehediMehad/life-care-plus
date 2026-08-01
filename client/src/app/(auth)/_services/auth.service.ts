@@ -1,6 +1,7 @@
 "use server";
 
 import { verifyAccessToken } from "@/lib/auth/jwt-handlers";
+import { getCookieOptions } from "@/lib/auth/cookie-config";
 import { serverFetch } from "@/services/http";
 import { zodValidator } from "@/lib/utils/zod-validator";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/app/(auth)/_validations/auth.validation";
@@ -220,22 +221,28 @@ export async function getNewAccessToken() {
             throw new Error("Tokens not found in cookies");
         }
 
+        const cookieBase = getCookieOptions();
         await deleteCookie("accessToken");
         await setCookie("accessToken", accessTokenObject.accessToken, {
-            secure: true,
-            httpOnly: true,
+            ...cookieBase,
             maxAge: parseInt(accessTokenObject['Max-Age']) || 1000 * 60 * 60,
             path: accessTokenObject.Path || "/",
-            sameSite: accessTokenObject['SameSite'] || "none",
+            sameSite: accessTokenObject['SameSite'] || cookieBase.sameSite,
+        });
+
+        await setCookie("isLoggedIn", "true", {
+            ...cookieBase,
+            httpOnly: false,
+            maxAge: parseInt(accessTokenObject['Max-Age']) || 1000 * 60 * 60,
+            path: "/",
         });
 
         await deleteCookie("refreshToken");
         await setCookie("refreshToken", refreshTokenObject.refreshToken, {
-            secure: true,
-            httpOnly: true,
+            ...cookieBase,
             maxAge: parseInt(refreshTokenObject['Max-Age']) || 1000 * 60 * 60 * 24 * 90,
             path: refreshTokenObject.Path || "/",
-            sameSite: refreshTokenObject['SameSite'] || "none",
+            sameSite: refreshTokenObject['SameSite'] || cookieBase.sameSite,
         });
 
         if (!result.success) {

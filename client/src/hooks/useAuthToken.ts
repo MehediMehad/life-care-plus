@@ -14,7 +14,7 @@ export function useAuthToken() {
 
     const cookies = document.cookie.split(";");
     const hasAccessToken = cookies.some((cookie) =>
-        cookie.trim().startsWith("accessToken=")
+        cookie.trim().startsWith("isLoggedIn=")
     );
 
     return hasAccessToken;

@@ -9,6 +9,7 @@ import logger from './lib/logger';
 import router from './app/routes';
 import { PaymentController } from './app/modules/payment/payment.controller';
 import { AppointmentService } from './app/modules/appointment/appointment.service';
+import prisma from './shared/prisma';
 import { redis } from './lib/redis';
 import expressSession from 'express-session';
 import passport from 'passport';
@@ -17,6 +18,8 @@ import './config/passport';
 import * as Sentry from '@sentry/node';
 
 const app: Application = express();
+
+app.set('trust proxy', 1);
 
 // Initialize Sentry
 Sentry.init({
@@ -44,7 +47,7 @@ app.post(
 
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', '*'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', envVars.frontendUrl as string],
     credentials: true,
   }),
 );
@@ -71,6 +74,45 @@ cron.schedule('*/5 * * * *', () => {
     const duration = Date.now() - startTime;
     logger.cronJob('cancelUnpaidAppointments', false, duration);
     logger.error('❌ Cron job error', err as Error);
+  }
+});
+
+// Cron job for cleaning up expired blacklisted tokens (daily at 3:00 AM)
+cron.schedule('0 3 * * *', async () => {
+  const startTime = Date.now();
+  try {
+    const result = await prisma.tokenBlacklist.deleteMany({
+      where: {
+        expiresAt: { lte: new Date() },
+      },
+    });
+    logger.info(`🧹 Cleaned up ${result.count} expired blacklisted tokens`);
+    const duration = Date.now() - startTime;
+    logger.cronJob('cleanExpiredBlacklistedTokens', true, duration);
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    logger.cronJob('cleanExpiredBlacklistedTokens', false, duration);
+    logger.error('❌ Token blacklist cleanup cron error', err as Error);
+  }
+});
+
+// Cron job for cleaning up old login attempts (daily at 3:30 AM, keep 7 days)
+cron.schedule('30 3 * * *', async () => {
+  const startTime = Date.now();
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const result = await prisma.loginAttempt.deleteMany({
+      where: {
+        attemptAt: { lte: sevenDaysAgo },
+      },
+    });
+    logger.info(`🧹 Cleaned up ${result.count} old login attempts`);
+    const duration = Date.now() - startTime;
+    logger.cronJob('cleanOldLoginAttempts', true, duration);
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    logger.cronJob('cleanOldLoginAttempts', false, duration);
+    logger.error('❌ Login attempt cleanup cron error', err as Error);
   }
 });
 

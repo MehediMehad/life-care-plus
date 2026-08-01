@@ -9,7 +9,7 @@ export const createVideoRoom = async (videoCallingId: string) => {
     name: videoCallingId, // তোমার ডাটাবেসের UUID টাই হবে রুমের নাম
     privacy: 'public',
     properties: {
-      max_participants: 2, 
+      max_participants: 2,
       enable_chat: true,
       enable_screenshare: true,
     },
